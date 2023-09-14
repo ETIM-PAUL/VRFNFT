@@ -12,7 +12,7 @@ import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
 
 contract JOE_GAMING_NFT is ERC721URIStorage, VRFConsumerBaseV2 {
     event RequestSent(uint256 requestId, uint32 numWords);
-    event NFT_MINTED(JOE_NFT_MINTER);
+    event NFT_MINTED(JOE_NFT_MINTER, JOE_GAMER_ATTRIBUTES);
 
     VRFCoordinatorV2Interface immutable COORDINATOR;
 
@@ -79,14 +79,14 @@ contract JOE_GAMING_NFT is ERC721URIStorage, VRFConsumerBaseV2 {
     //mapping to know if an address has minted joe gamer nft
     mapping(address => bool) hasMinted;
 
-    string s_nftTokenUri;
+    string[] internal s_nftTokenUri;
 
     // Constructor with all the paremeter needed for Chainlink VRF and UriStorage NFTs
     constructor(
         uint64 subscriptionId,
         address vrfCoordinator,
         bytes32 keyHash,
-        string memory _baseuri
+        string[1] memory _baseuri
     ) VRFConsumerBaseV2(vrfCoordinator) ERC721("Joe Gaming NFT", "JFT") {
         COORDINATOR = VRFCoordinatorV2Interface(vrfCoordinator);
         s_keyHash = keyHash;
@@ -133,11 +133,9 @@ contract JOE_GAMING_NFT is ERC721URIStorage, VRFConsumerBaseV2 {
         uint256 moddedRng = randomWords[0] % MAX_CHANCE_VALUE;
         JOE_GAMER_ATTRIBUTES nftGamer = getGamerFromModdedRng(moddedRng);
 
-        s_nftTokenUri = getTokenUri(uint(nftGamer));
-
         // mint NFT
         _safeMint(nftOwner, mintTracker);
-        _setTokenURI(newItemId, s_nftTokenUri(s_nftTokenUri));
+        _setTokenURI(newItemId, s_nftTokenUri[uint(nftGamer)]);
 
         //update minter details
         JOE_NFT_MINTER storage _minterDetails = minterDetails[_requestId];
@@ -148,7 +146,7 @@ contract JOE_GAMING_NFT is ERC721URIStorage, VRFConsumerBaseV2 {
         hasMinted[msg.sender] = true;
 
         //struct for minter
-        emit NFT_MINTED(nftGamer, nftOwner);
+        emit NFT_MINTED(_minterDetails, nftGamer);
     }
 
     function getRequestStatus(
@@ -176,7 +174,7 @@ contract JOE_GAMING_NFT is ERC721URIStorage, VRFConsumerBaseV2 {
 
     // Get the Change to get a specific Gamer
     function getChanceArray() public pure returns (uint256[6] memory) {
-        return [20, 50, MAX_CHANCE_VALUE];
+        return [20, 6, 8, 20, 50, MAX_CHANCE_VALUE];
     }
 
     function tokenURI(
@@ -190,6 +188,6 @@ contract JOE_GAMING_NFT is ERC721URIStorage, VRFConsumerBaseV2 {
     }
 
     function _baseURI() internal view virtual override returns (string memory) {
-        return s_nftTokenUri;
+        return s_nftTokenUri[0];
     }
 }
