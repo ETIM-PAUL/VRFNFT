@@ -1,18 +1,21 @@
 import { ethers } from "hardhat";
 
 async function main() {
-  const currentTimestampInSeconds = Math.round(Date.now() / 1000);
-  const unlockTime = currentTimestampInSeconds + 60;
 
-  const lockedAmount = ethers.parseEther("0.001");
+  const subscriptionId ="14204";
+  const vrfCoordinator = '0x2Ca8E0C643bDe4C2E08ab1fA0da3401AdAD7734D';
+  const keyHash =
+    '0x79d3d8832d904592c0bf9818b621522c988bb8b0c05cdc3b15aea1b6e8db0c15';
 
-  const lock = await ethers.deployContract("Lock", [unlockTime], {
-    value: lockedAmount,
-  });
 
-  await lock.waitForDeployment();
+  const vrfContract = await ethers.deployContract("VRF", 
+  [subscriptionId,
+    vrfCoordinator,
+    keyHash,]);
 
-  console.log();
+  await vrfContract.waitForDeployment();
+
+  console.log("VRF contract deployed to", vrfContract.target);
 }
 
 // We recommend this pattern to be able to use async/await everywhere

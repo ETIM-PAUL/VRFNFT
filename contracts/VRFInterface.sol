@@ -12,7 +12,13 @@ struct RequestStatus {
 interface VRFInterface {
     function requestRandomWords() external view returns (uint256 requestId);
 
+    function lastRequestId() external view returns (uint256 requestId);
+
     function owner() external view returns (address);
 
     function s_requests(uint) external view returns (RequestStatus memory);
+
+    function getRequestStatus(
+        uint
+    ) external view returns (bool fulfilled, uint256[] memory);
 }

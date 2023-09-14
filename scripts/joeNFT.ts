@@ -1,9 +1,8 @@
 import { ethers } from "hardhat";
-import {BigIntBuffer} from "bigint-buffer"
 
 async function main() {
 
-  const vrf = await ethers.getContractAt("VRFInterface", "0x61c9ddb7F2ec5B7F97b5b543A5bb3d9575De2950")
+  const vrf = await ethers.getContractAt("VRFInterface", "0xf0361b3E55c82011E748125c0E8472b770AFE8a5")
 
   const [add] = await ethers.getSigners()
   const addre = add.address;
@@ -12,25 +11,24 @@ async function main() {
 
   // const owner = await vrf.connect(impersonateLinkHolder).owner();
   // console.log(owner);
-  // const randomWords = await vrf.connect(add).requestRandomWords()
+  // const d = await vrf.connect(add).requestRandomWords()
+  const b = await vrf.connect(add).lastRequestId()
 
-  const d = 61672127016817726662883638452525087898577816902434073984866629832706730662129n
-
-  const uintValue = BigInt(d);
- 
-    if (d >= 0n && d <= 4294967295n) {
-      // Convert BigInt to UInt (Number)
-      const uintValue = BigInt(d);
-      return uintValue;
-    } else {
-      console.error("BigInt value is out of the range of a UInt.");
-    }
+    // console.log(d)
+    console.log(b)
+  
+    // const s_script = await vrf.connect(add).getRequestStatus(k);
 
 
-  const s_script = await vrf.connect(add).s_requests(BigInt(d));
 
 
-  console.log(s_script);
+  // const d = 61672127016817726662883638452525087898577816902434073984866629832706730662129n
+
+  // const b = await ethers.getNumber(k)
+  // const b = await ethers.toBeHex(d)
+
+  // console.log(b);
+
 }
 
 // We recommend this pattern to be able to use async/await everywhere
