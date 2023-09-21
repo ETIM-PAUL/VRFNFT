@@ -1,13 +1,3 @@
-# Sample Hardhat Project
+# VRF Randomness NFT
 
-This project demonstrates a basic Hardhat use case. It comes with a sample contract, a test for that contract, and a script that deploys that contract.
-
-Try running some of the following tasks:
-
-```shell
-npx hardhat help
-npx hardhat test
-REPORT_GAS=true npx hardhat test
-npx hardhat node
-npx hardhat run scripts/deploy.ts
-```
+## contract address => 0x5C7B21a64a4b1561Fa1c88EB843AFF1b237d92a8
