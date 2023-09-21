@@ -13,6 +13,9 @@ import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
 contract JOE_GAMING_NFT is ERC721URIStorage, VRFConsumerBaseV2 {
     event RequestSent(uint256 requestId, uint32 numWords);
     event NFT_MINTED(JOE_NFT_MINTER, JOE_GAMER_ATTRIBUTES);
+    event RequestFulfilled(uint256 requestId, uint256[] randomWords);
+
+    using Strings for uint256;
 
     VRFCoordinatorV2Interface immutable COORDINATOR;
 
@@ -24,18 +27,12 @@ contract JOE_GAMING_NFT is ERC721URIStorage, VRFConsumerBaseV2 {
 
     uint16 constant REQUEST_CONFIRMATIONS = 3;
 
-    uint32 constant NUM_WORDS = 6;
-
-    uint256[] public s_randomWords;
-
-    uint256 public requestId;
+    uint32 constant NUM_WORDS = 2;
 
     address s_owner;
 
     // uint256[] public requestIds;
     uint256 public lastRequestId;
-
-    mapping(uint => address) public mappedIdToSender;
 
     uint256 internal constant MAX_CHANCE_VALUE = 100;
 
@@ -44,12 +41,12 @@ contract JOE_GAMING_NFT is ERC721URIStorage, VRFConsumerBaseV2 {
 
     //struct to contain nft attributes
     enum JOE_GAMER_ATTRIBUTES {
-        gunSize,
-        noOfBullets,
-        noOfGrenade,
-        gunType,
-        combatUniformColor,
-        noOfLives
+        BadGamer,
+        SlowGamer,
+        TopGamer,
+        LegendGamer,
+        CombatGamer,
+        NoGamer
     }
 
     //struct to contain an nft holder information
@@ -61,11 +58,10 @@ contract JOE_GAMING_NFT is ERC721URIStorage, VRFConsumerBaseV2 {
     struct RequestStatus {
         bool fulfilled; // whether the request has been successfully fulfilled
         bool exists; // whether a requestId exists
-        uint256 randomWord;
+        uint256[] randomWords;
     }
 
-    mapping(uint256 => RequestStatus)
-        public s_requests; /* requestId --> requestStatus */
+    mapping(uint256 => RequestStatus) public s_requests;
 
     //total mints supplied
     uint mintTracker;
@@ -74,28 +70,27 @@ contract JOE_GAMING_NFT is ERC721URIStorage, VRFConsumerBaseV2 {
     mapping(uint => JOE_GAMER_ATTRIBUTES) gamingMinter;
 
     //mapping of nft holder to his information
-    mapping(uint => JOE_NFT_MINTER) minterDetails;
+    mapping(uint => JOE_NFT_MINTER) public minterDetails;
 
-    //mapping to know if an address has minted joe gamer nft
-    mapping(address => bool) hasMinted;
-
-    string[] internal s_nftTokenUri;
+    string[6] internal s_nftTokenUri;
 
     // Constructor with all the paremeter needed for Chainlink VRF and UriStorage NFTs
     constructor(
-        uint64 subscriptionId,
-        address vrfCoordinator,
-        bytes32 keyHash,
-        string[1] memory _baseuri
-    ) VRFConsumerBaseV2(vrfCoordinator) ERC721("Joe Gaming NFT", "JFT") {
-        COORDINATOR = VRFCoordinatorV2Interface(vrfCoordinator);
-        s_keyHash = keyHash;
+        string[6] memory _uris
+    )
+        VRFConsumerBaseV2(0x2Ca8E0C643bDe4C2E08ab1fA0da3401AdAD7734D)
+        ERC721("Joe Gaming NFT", "JFT")
+    {
+        COORDINATOR = VRFCoordinatorV2Interface(
+            0x2Ca8E0C643bDe4C2E08ab1fA0da3401AdAD7734D
+        );
+        s_keyHash = 0x79d3d8832d904592c0bf9818b621522c988bb8b0c05cdc3b15aea1b6e8db0c15;
         s_owner = msg.sender;
-        s_subscriptionId = subscriptionId;
-        s_nftTokenUri = _baseuri;
+        s_subscriptionId = 14204;
+        s_nftTokenUri = _uris;
     }
 
-    function requestRandomWords() external returns (uint) {
+    function requestRandomWords() external returns (uint256 requestId) {
         requestId = COORDINATOR.requestRandomWords(
             s_keyHash,
             s_subscriptionId,
@@ -105,16 +100,13 @@ contract JOE_GAMING_NFT is ERC721URIStorage, VRFConsumerBaseV2 {
         );
 
         s_requests[requestId] = RequestStatus({
-            randomWord: 0,
+            randomWords: new uint256[](0),
             exists: true,
             fulfilled: false
         });
 
         lastRequestId = requestId;
-
-        mappedIdToSender[requestId] = msg.sender;
         emit RequestSent(requestId, NUM_WORDS);
-
         return requestId;
     }
 
@@ -122,59 +114,48 @@ contract JOE_GAMING_NFT is ERC721URIStorage, VRFConsumerBaseV2 {
 
     function fulfillRandomWords(
         uint256 _requestId,
-        uint256[] memory randomWords
+        uint256[] memory _randomWords
     ) internal override {
-        // require(mappedIdToSender[_requestId], "invalid request id");
-        address nftOwner = mappedIdToSender[_requestId];
+        require(s_requests[_requestId].exists, "request not found");
+        s_requests[_requestId].fulfilled = true;
+        s_requests[_requestId].randomWords = _randomWords;
+        emit RequestFulfilled(_requestId, _randomWords);
+    }
 
-        uint256 newItemId = mintTracker;
-        mintTracker = mintTracker + 1;
-
-        uint256 moddedRng = randomWords[0] % MAX_CHANCE_VALUE;
-        JOE_GAMER_ATTRIBUTES nftGamer = getGamerFromModdedRng(moddedRng);
+    function mintNFT()
+        external
+        returns (bool success, JOE_GAMER_ATTRIBUTES nftGamer)
+    {
+        //get tokenId status
+        RequestStatus memory _request = s_requests[lastRequestId];
 
         // mint NFT
-        _safeMint(nftOwner, mintTracker);
-        _setTokenURI(newItemId, s_nftTokenUri[uint(nftGamer)]);
+        uint256 newItemId = mintTracker;
 
-        //update minter details
-        JOE_NFT_MINTER storage _minterDetails = minterDetails[_requestId];
+        uint256 moddedRng = _request.randomWords[0] % 6;
+        nftGamer = JOE_GAMER_ATTRIBUTES(moddedRng + 1);
+
+        JOE_NFT_MINTER storage _minterDetails = minterDetails[lastRequestId];
         _minterDetails.minterAddress = msg.sender;
         _minterDetails.mintTime = block.timestamp;
 
-        //confirm that an address has mint an NFT
-        hasMinted[msg.sender] = true;
+        gamingMinter[mintTracker] = nftGamer;
 
-        //struct for minter
+        _safeMint(msg.sender, newItemId);
+        _setTokenURI(newItemId, s_nftTokenUri[uint8(nftGamer)]);
+
+        success = true;
+        mintTracker += 1;
         emit NFT_MINTED(_minterDetails, nftGamer);
+        return (success, nftGamer);
     }
 
     function getRequestStatus(
         uint256 _requestId
-    ) external view returns (bool fulfilled, uint256 randomWord) {
+    ) external view returns (bool fulfilled, uint256[] memory randomWords) {
         require(s_requests[_requestId].exists, "request not found");
         RequestStatus memory request = s_requests[_requestId];
-        return (request.fulfilled, request.randomWord);
-    }
-
-    // Get Gamer from Modded RNG
-    function getGamerFromModdedRng(
-        uint256 moddedRng
-    ) public pure returns (JOE_GAMER_ATTRIBUTES) {
-        uint256 totalSum = 0;
-        uint256[6] memory changeArray = getChanceArray();
-        for (uint256 i = 0; i < changeArray.length; i++) {
-            if (moddedRng >= totalSum && moddedRng < changeArray[i]) {
-                return JOE_GAMER_ATTRIBUTES(i);
-            }
-            totalSum += changeArray[i];
-        }
-        revert Gamer_VALUE_OUT_OF_RANGE();
-    }
-
-    // Get the Change to get a specific Gamer
-    function getChanceArray() public pure returns (uint256[6] memory) {
-        return [20, 6, 8, 20, 50, MAX_CHANCE_VALUE];
+        return (request.fulfilled, request.randomWords);
     }
 
     function tokenURI(
@@ -182,12 +163,18 @@ contract JOE_GAMING_NFT is ERC721URIStorage, VRFConsumerBaseV2 {
     ) public view virtual override returns (string memory) {
         require(_exists(token_ID), "Doesn't Exist");
 
-        string memory baseURI = _baseURI();
+        string memory baseURI = _baseURI(uint8(gamingMinter[token_ID]));
         return
-            bytes(baseURI).length > 0 ? string(abi.encodePacked(baseURI)) : "";
+            bytes(baseURI).length > 0
+                ? string(
+                    abi.encodePacked(
+                        s_nftTokenUri[uint8(gamingMinter[token_ID])]
+                    )
+                )
+                : "";
     }
 
-    function _baseURI() internal view virtual override returns (string memory) {
-        return s_nftTokenUri[0];
+    function _baseURI(uint index) public view returns (string memory) {
+        return s_nftTokenUri[index];
     }
 }

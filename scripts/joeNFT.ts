@@ -2,7 +2,7 @@ import { ethers } from "hardhat";
 
 async function main() {
 
-  const vrf = await ethers.getContractAt("VRFInterface", "0xf0361b3E55c82011E748125c0E8472b770AFE8a5")
+  const vrf = await ethers.getContractAt("VRFInterface", "0xdB29051641c7257BF8ca45a68B16505C254dC6d1")
 
   const [add] = await ethers.getSigners()
   const addre = add.address;
@@ -10,14 +10,15 @@ async function main() {
   // const impersonateLinkHolder = await ethers.getImpersonatedSigner("0x9d4eF81F5225107049ba08F69F598D97B31ea644")
 
   // const owner = await vrf.connect(impersonateLinkHolder).owner();
-  // console.log(owner);
-  // const d = await vrf.connect(add).requestRandomWords()
+
+  const d = await vrf.connect(add).requestRandomWords()
   const b = await vrf.connect(add).lastRequestId()
 
     // console.log(d)
-    console.log(b)
+    // console.log(b)
   
-    // const s_script = await vrf.connect(add).getRequestStatus(k);
+    // const s_script = await vrf.connect(add).mintNFT();
+    // const s_script = await vrf.connect(add).tokenURI(0);
 
 
 
@@ -27,7 +28,7 @@ async function main() {
   // const b = await ethers.getNumber(k)
   // const b = await ethers.toBeHex(d)
 
-  // console.log(b);
+  console.log(b);
 
 }
 

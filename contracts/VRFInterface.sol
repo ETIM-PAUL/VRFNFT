@@ -10,6 +10,8 @@ struct RequestStatus {
 }
 
 interface VRFInterface {
+    function mintNFT() external returns (bool success);
+
     function requestRandomWords() external view returns (uint256 requestId);
 
     function lastRequestId() external view returns (uint256 requestId);
@@ -21,4 +23,6 @@ interface VRFInterface {
     function getRequestStatus(
         uint
     ) external view returns (bool fulfilled, uint256[] memory);
+
+    function tokenURI(uint256 token_ID) external view returns (string memory);
 }
